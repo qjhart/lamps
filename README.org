@@ -1,0 +1,42 @@
+
+* Lamps
+
+I'm trying to build a template for cylinder lamps.  There are a few we can make,
+including those with a flat top, and those with an eliptical rod, not a simple
+circle.  For all of these, I'll parameterize them by the angle subtended from
+the x-axis (t).  I can create this as a 3-d model with openscad, but I can't
+figure out how to unbend the cylinder, so I'm writing the equations and plotting
+with gnuplot.
+
+*** Basic (cylinder)
+
+The
+
+#+begin_src gnuplot
+  set parameter
+  set size ratio -1
+  set angles radians
+#+end_src
+
+#+begin_src gnuplot
+  ang=30*(pi/18)
+  sz=30
+  a=sz
+  b=ang/cos(ang)
+#+end_src
+
+#+begin_example
+     y
+     |
+     +--- x
+    /
+   z
+#+end_example
+
+You have taken cylinder parameterized as r*cos(t)i + r*sin(t)j + z = 0
+
+#+begin_src gnuplot
+  plot [-pi/2:pi/2] -b*cos(t), a*sin(t),
+  [-pi/2:pi/2] -a*tan(ang)*cos(t), a*t,
+  [-pi/2:pi/2] a*t, a*pi/2
+#+end_src
