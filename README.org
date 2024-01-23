@@ -1,42 +1,104 @@
-
 * Lamps
 
 I'm trying to build a template for cylinder lamps.  There are a few we can make,
 including those with a flat top, and those with an eliptical rod, not a simple
-circle.  For all of these, I'll parameterize them by the angle subtended from
-the x-axis (t).  I can create this as a 3-d model with openscad, but I can't
-figure out how to unbend the cylinder, so I'm writing the equations and plotting
-with gnuplot.
+circle.
 
 *** Basic (cylinder)
 
-The
+The [[file:lamp1.scad.png][lamp1]] scad file is an example of in general how I want to construct these
+lamps.  The idea is fairly simple.  You have half a cylinder, and then you cut
+it off at an angle at both ends.  I'll stitch these components together, and
+finish with fiberglass and epoxy.
 
-#+begin_src gnuplot
-  set parameter
+However, what I can't figure out is how I can un-bend the cylinder in order to
+get the proper cutting for the laser cutter.  For the sides, I should be able to
+pick the appropriate view direction, if I could then use that to make a 2-d
+drawing, but I don't know how to do that either.
+
+**** Gnuplot
+
+The idea here is that I can determine the exact functions of the lines for both
+the sides and the cylinder section, and then I can use these to generate a plot
+of the data..  Then I can export this as a dxf file, and directly print on the
+laser printer.
+
+#+begin_example
+     y (j)
+     |
+     +--- x (i)
+    /
+   z (k)
+#+end_example
+
+I'll parameterize the lines by the angle subtended from the x-axis to the y-axis
+(~t~).  So you can describe a cylinder along the z-axis as  parameterized as
+~r*cos(t)^i + r*sin(t)^j + z^k~
+
+Now, we rotate the cylinder in the x-z plane an angle of ~R~ (in radians).  The
+equation for the cylinder on the x-y plane (z=0) then becomes ~(r/cos(R))*cos(t)^i +
+r*sin(t)^j~
+
+This piece is one of the (two) flat pieces that make up the sides of the lamp.
+Now, we want to also plot the curved piece on the x-y plane as well.  So, let's
+take that same elipse, and rotate it (pi/2-R), so that the original cylinder is
+now on along the x-axis, and if we look at the projection of this elipse in the
+x-y plane we get the following equation:
+
+
+#+begin_src gnuplot :tangle lamp_cut.gp
+  set parametric
   set size ratio -1
   set angles radians
 #+end_src
 
-#+begin_src gnuplot
-  ang=30*(pi/18)
-  sz=30
+#+RESULTS:
+
+
+#+begin_src gnuplot :tangle lamp_cut.gp
+  R=45*(pi/180)
+  center_hole=0.25
+  wire_offset=0.1
+  sz=6
   a=sz
-  b=ang/cos(ang)
+  b=a/cos(R)
 #+end_src
 
-#+begin_example
-     y
-     |
-     +--- x
-    /
-   z
-#+end_example
+#+RESULTS:
 
-You have taken cylinder parameterized as r*cos(t)i + r*sin(t)j + z = 0
+#+begin_src gnuplot :tangle lamp_cut.gp
+  set trange [-pi/2:pi/2]
+  plot \
+       -a*pi/2 + a*tan(R) - b + b*cos(t), a*sin(t), \
+       -a*pi/2 + a*tan(R) - b , a/(pi/2)*t, \
+       -a*pi/2 + a*tan(R)*cos(t), a*t,\
+       a*t, - a*pi/2, \
+       a*pi/2 - a*tan(R) + b  - b*cos(t), a*sin(t), \
+       a*pi/2 - a*tan(R) + b , a/(pi/2)*t, \
+       a*pi/2 - a*tan(R)*cos(t), a*t,\
+       a*t, a*pi/2
+  replot center_hole*cos(2*t),center_hole*sin(2*t)
+  replot -a*pi/2 + a*tan(R) - b + (b-wire_offset)*cos(t), a*sin(t) with circles \
+
+#+end_src
+
 
 #+begin_src gnuplot
-  plot [-pi/2:pi/2] -b*cos(t), a*sin(t),
-  [-pi/2:pi/2] -a*tan(ang)*cos(t), a*t,
-  [-pi/2:pi/2] a*t, a*pi/2
+    # Set up the parametric plot
+  set parametric
+  set angles degrees
+  set trange [0:360]
+  plot cos(t), sin(t) with lines title "Parametric Plot"
+  replot for [i=0:3:1] i*cos(t), i*sin(t)
 #+end_src
+#+RESULTS:
+
+#+begin_src gnuplot
+    # Set up the parametric plot
+  unset parametric
+  set xrange [0:1]
+  plot x with lines title "Line Plot"
+  replot for [i=0:2] i/3.0,0.5 with circles
+#+end_src
+
+#+RESULTS:
